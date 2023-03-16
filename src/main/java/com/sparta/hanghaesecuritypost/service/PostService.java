@@ -1,5 +1,7 @@
 package com.sparta.hanghaesecuritypost.service;
 
+import com.sparta.hanghaesecuritypost.Exception.CustomErrorEnum;
+import com.sparta.hanghaesecuritypost.Exception.CustomException;
 import com.sparta.hanghaesecuritypost.dto.PostRequestDto;
 import com.sparta.hanghaesecuritypost.dto.PostResponseDto;
 import com.sparta.hanghaesecuritypost.dto.ReplyResponseDto;
@@ -93,7 +95,9 @@ public class PostService {
     private void checkPostRole(Long id, User user) {
         if (user.getRole() == UserRoleEnum.ADMIN) return;
         postRepository.findByIdAndUser(id, user).orElseThrow(
-                () -> new IllegalArgumentException("권한이 없습니다.")
+                // TODO : 커스텀 한 예외처리 예시
+                () -> new CustomException(CustomErrorEnum.NOROLE)
+//                () -> new IllegalArgumentException("권한이 없습니다.")
         );
     }
 
@@ -114,7 +118,9 @@ public class PostService {
 
     private Post getPost(Long id) {
         return postRepository.findById(id).orElseThrow(
-                () -> new IllegalArgumentException("게시글이 존재하지 않습니다.")
+                // TODO : 커스텀 한 예외처리 예시
+                () -> new CustomException(CustomErrorEnum.NOPOST)
+//                () -> new IllegalArgumentException("게시글이 존재하지 않습니다.")
         );
     }
 
