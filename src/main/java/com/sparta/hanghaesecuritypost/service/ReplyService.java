@@ -62,12 +62,13 @@ public class ReplyService {
         );
     }
 
+    @Transactional
     public ResponseEntity<String> likeReply(Long replyId, User user) {
-        getReply(replyId);
+        Reply reply = getReply(replyId);
 
         Optional<Like> like = getlike(LikeEnum.REPLY, replyId, user);
         if (like.isEmpty()) {   // 좋아요 없으면 좋아요 추가
-            saveLike(LikeEnum.REPLY, replyId, user);
+            saveLike(LikeEnum.REPLY, reply.getPost().getId(), replyId, user);
             return ResponseEntity.status(HttpStatus.OK).body("좋아요");
         } else {                // 좋아요 중이면 삭제
             deleteLike(like.get().getId());
@@ -85,8 +86,8 @@ public class ReplyService {
         return likeRepository.findByIndexAndLikeIdAndUser(likeEnum.getIndex(), likeId, user);
     }
 
-    private void saveLike(LikeEnum post, Long likeId, User user) {
-        likeRepository.saveAndFlush(new Like(post, likeId, user));
+    private void saveLike(LikeEnum post, Long postId, Long likeId, User user) {
+        likeRepository.saveAndFlush(new Like(post, postId, likeId, user));
     }
 
     private void deleteLike(Long likeId) {

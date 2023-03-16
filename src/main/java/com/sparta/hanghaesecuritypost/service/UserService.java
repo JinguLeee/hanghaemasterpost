@@ -27,6 +27,7 @@ public class UserService {
     private final LikeRepository likeRepository;
     private final JwtUtil jwtUtil;
 
+    @Transactional
     public ResponseEntity<String> signup(SignupRequestDto signupRequestDto) {
         String username = signupRequestDto.getUsername();
 
@@ -39,6 +40,7 @@ public class UserService {
         return ResponseEntity.status(HttpStatus.OK).body("회원가입 성공");
     }
 
+    @Transactional
     public ResponseEntity<String> login(LoginRequestDto loginRequestDto, HttpServletResponse response) {
         // 사용자 확인
         User user = userRepository.findByUsername(loginRequestDto.getUsername()).orElseThrow(
@@ -60,26 +62,26 @@ public class UserService {
                 () -> new IllegalArgumentException("등록된 사용자가 없습니다.")
         );
 
-        // 좋아요 삭제
+        // 유저가 한 좋아요 전부 삭제
         likeRepository.deleteAllByUser(user);
 
-        // 댓글 삭제
+        // 유저가 쓴 댓글 전부 조회
+        // 그 댓글에 달린 좋아요 전부 삭제
+        // 후에 댓글을 삭제
         List<Reply> replyList = replyRepository.findAllByUser(user);
         for (Reply reply : replyList) {
             likeRepository.deleteAllByIndexAndLikeId(LikeEnum.REPLY.getIndex(), reply.getId());
         }
         replyRepository.deleteAllByUser(user);
 
-        // 게시글 삭제
+        // 유저가 쓴 게시글 전부 조회
+        // 그 게시글에 달린 좋아요(게시글, 댓글) 전부 삭제
+        // 그 게시글에 달린 댓글 전부 삭제
+        // 후에 게시글을 삭제
         List<Post> postList = postRepository.findAllByUser(user);
         for (Post post : postList) {
-            likeRepository.deleteAllByIndexAndLikeId(LikeEnum.POST.getIndex(), post.getId());
-            replyList = replyRepository.findAllByPostId(post.getId());
-            for (Reply reply : replyList) {
-                likeRepository.deleteAllByIndexAndLikeId(LikeEnum.REPLY.getIndex(), reply.getId());
-            }
+            likeRepository.deleteAllByPostId(post.getId());
             replyRepository.deleteAllByPostId(post.getId());
-
             postRepository.deleteById(post.getId());
         }
 

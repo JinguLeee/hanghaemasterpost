@@ -17,14 +17,18 @@ public class Like {
     private int index;
 
     @Column(nullable = false)
+    private Long postId;
+
+    @Column(nullable = false)
     private Long likeId;
 
     @ManyToOne
     @JoinColumn(name = "userId", nullable = false)
     private User user;
 
-    public Like(LikeEnum likeEnum, Long likeId, User user) {
+    public Like(LikeEnum likeEnum, Long postId, Long likeId, User user) {
         this.index = likeEnum.getIndex();
+        this.postId = postId;
         this.likeId = likeId;
         this.user = user;
     }

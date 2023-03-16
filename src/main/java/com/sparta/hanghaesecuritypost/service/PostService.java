@@ -77,11 +77,10 @@ public class PostService {
 
         checkPostRole(postId, user);  // 권한을 확인한다 (자신이 쓴 글인지 확인)
 
-        List<Reply> replyList = replyRepository.findAllByPostId(postId);
-        for (Reply reply : replyList) {
-            likeRepository.deleteAllByIndexAndLikeId(LikeEnum.REPLY.getIndex(), reply.getId());
-        }
+        likeRepository.deleteAllByPostId(postId);
         replyRepository.deleteAllByPostId(postId);
+        postRepository.deleteById(postId);
+
         return ResponseEntity.status(HttpStatus.OK).body("삭제 완료");
     }
 
@@ -101,7 +100,7 @@ public class PostService {
 
         Optional<Like> like = getlike(LikeEnum.POST, postId, user);
         if (like.isEmpty()) {
-            saveLike(LikeEnum.POST, postId, user);
+            saveLike(LikeEnum.POST, postId, postId, user);
             return ResponseEntity.status(HttpStatus.OK).body("좋아요");
         } else {                // 좋아요 중이면 삭제
             deleteLike(like.get().getId());
@@ -122,8 +121,8 @@ public class PostService {
         return likeRepository.findByIndexAndLikeIdAndUser(likeEnum.getIndex(), likeId, user);
     }
 
-    private void saveLike(LikeEnum post, Long likeId, User user) {
-        likeRepository.saveAndFlush(new Like(post, likeId, user));
+    private void saveLike(LikeEnum post, Long postId, Long likeId, User user) {
+        likeRepository.saveAndFlush(new Like(post, postId, likeId, user));
     }
 
     private void deleteLike(Long likeId) {
