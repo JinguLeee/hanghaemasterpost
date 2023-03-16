@@ -2,6 +2,7 @@ package com.sparta.hanghaesecuritypost.service;
 
 import com.sparta.hanghaesecuritypost.dto.LoginRequestDto;
 import com.sparta.hanghaesecuritypost.dto.SignupRequestDto;
+import com.sparta.hanghaesecuritypost.entity.LikeEnum;
 import com.sparta.hanghaesecuritypost.entity.Post;
 import com.sparta.hanghaesecuritypost.entity.Reply;
 import com.sparta.hanghaesecuritypost.entity.User;
@@ -13,7 +14,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.List;
 
@@ -24,8 +24,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final PostRepository postRepository;
     private final ReplyRepository replyRepository;
-    private final LikePostRepository likePostRepository;
-    private final LikeReplyRepository likeReplyRepository;
+    private final LikeRepository likeRepository;
     private final JwtUtil jwtUtil;
 
     public ResponseEntity<String> signup(SignupRequestDto signupRequestDto) {
@@ -61,31 +60,34 @@ public class UserService {
                 () -> new IllegalArgumentException("등록된 사용자가 없습니다.")
         );
 
-        // 댓글 좋아요 삭제
-        likeReplyRepository.deleteAllByUserId(user.getId());
+        // 좋아요 삭제
+        likeRepository.deleteAllByUser(user);
 
         // 댓글 삭제
         List<Reply> replyList = replyRepository.findAllByUser(user);
         for (Reply reply : replyList) {
-            likeReplyRepository.deleteAllByReplyId(reply.getId());
+            likeRepository.deleteAllByIndexAndLikeId(LikeEnum.REPLY.getIndex(), reply.getId());
         }
         replyRepository.deleteAllByUser(user);
-
-        // 게시글 좋아요 삭제
-        likePostRepository.deleteAllByUser(user);
 
         // 게시글 삭제
         List<Post> postList = postRepository.findAllByUser(user);
         for (Post post : postList) {
-            likePostRepository.deleteAllByPostId(post.getId());
+            likeRepository.deleteAllByIndexAndLikeId(LikeEnum.POST.getIndex(), post.getId());
+            replyList = replyRepository.findAllByPostId(post.getId());
+            for (Reply reply : replyList) {
+                likeRepository.deleteAllByIndexAndLikeId(LikeEnum.REPLY.getIndex(), reply.getId());
+            }
             replyRepository.deleteAllByPostId(post.getId());
+
             postRepository.deleteById(post.getId());
         }
 
         // 아이디 삭제
         userRepository.delete(user);
 
-        response.addHeader(JwtUtil.AUTHORIZATION_HEADER, null); // 로그아웃?
+        // 로그아웃
+        response.addHeader(JwtUtil.AUTHORIZATION_HEADER, null);
         return ResponseEntity.status(HttpStatus.OK).body("회원 탈퇴 완료");
     }
 }

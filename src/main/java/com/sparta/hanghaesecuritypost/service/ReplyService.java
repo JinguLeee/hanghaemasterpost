@@ -3,7 +3,7 @@ package com.sparta.hanghaesecuritypost.service;
 import com.sparta.hanghaesecuritypost.dto.ReplyRequestDto;
 import com.sparta.hanghaesecuritypost.dto.ReplyResponseDto;
 import com.sparta.hanghaesecuritypost.entity.*;
-import com.sparta.hanghaesecuritypost.repository.LikeReplyRepository;
+import com.sparta.hanghaesecuritypost.repository.LikeRepository;
 import com.sparta.hanghaesecuritypost.repository.PostRepository;
 import com.sparta.hanghaesecuritypost.repository.ReplyRepository;
 import lombok.RequiredArgsConstructor;
@@ -12,12 +12,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Optional;
+
 @Service
 @RequiredArgsConstructor
 public class ReplyService {
-    private final ReplyRepository replyRepository;
     private final PostRepository postRepository;
-    private final LikeReplyRepository likeReplyRepository;
+    private final ReplyRepository replyRepository;
+    private final LikeRepository likeRepository;
 
     @Transactional
     public ReplyResponseDto createReply(Long postId, ReplyRequestDto requestDto, User user) {
@@ -37,17 +39,18 @@ public class ReplyService {
         Reply reply = getReply(replyId); // 댓글이 존재하는지 확인 후 가져온다.
         checkReplyRole(replyId, user);  // 권한을 확인한다 (자신이 쓴 댓글인지 확인)
         reply.update(replyRequestDto);
-        return new ReplyResponseDto(reply, user.getUsername(), countReplyLike(replyId));
+        return new ReplyResponseDto(reply, user.getUsername(), countLike(LikeEnum.REPLY, replyId));
     }
 
-    private Long countReplyLike(Long replyId) {
-        return likeReplyRepository.countByReplyId(replyId);
+    private Long countLike(LikeEnum likeEnum, Long likeId) {
+        return likeRepository.countByIndexAndLikeId(likeEnum.getIndex(), likeId);
     }
 
     @Transactional
     public ResponseEntity<String> delete(Long replyId, User user) {
         getReply(replyId); // 댓글이 존재하는지 확인 후 가져온다.
         checkReplyRole(replyId, user);  // 권한을 확인한다 (자신이 쓴 댓글인지 확인)
+        likeRepository.deleteAllByIndexAndLikeId(LikeEnum.REPLY.getIndex(), replyId);
         replyRepository.deleteById(replyId);
         return ResponseEntity.status(HttpStatus.OK).body("댓글 삭제 완료");
     }
@@ -61,14 +64,13 @@ public class ReplyService {
 
     public ResponseEntity<String> likeReply(Long replyId, User user) {
         getReply(replyId);
-        LikeReply likeReply = getLikeReply(replyId, user);
-        if (likeReply == null){
-            // 좋아요 없으면 좋아요 추가
-            likeReplyRepository.saveAndFlush(new LikeReply(replyId, user));
+
+        Optional<Like> like = getlike(LikeEnum.REPLY, replyId, user);
+        if (like.isEmpty()) {   // 좋아요 없으면 좋아요 추가
+            saveLike(LikeEnum.REPLY, replyId, user);
             return ResponseEntity.status(HttpStatus.OK).body("좋아요");
-        } else {
-            // 좋아요 중이면 삭제
-            likeReplyRepository.deleteById(likeReply.getId());
+        } else {                // 좋아요 중이면 삭제
+            deleteLike(like.get().getId());
             return ResponseEntity.status(HttpStatus.OK).body("좋아요 취소!");
         }
     }
@@ -79,8 +81,16 @@ public class ReplyService {
         );
     }
 
-    private LikeReply getLikeReply(Long replyId, User user) {
-        return likeReplyRepository.findByReplyIdAndUser(replyId, user);
+    private Optional<Like> getlike(LikeEnum likeEnum, Long likeId, User user) {
+        return likeRepository.findByIndexAndLikeIdAndUser(likeEnum.getIndex(), likeId, user);
+    }
+
+    private void saveLike(LikeEnum post, Long likeId, User user) {
+        likeRepository.saveAndFlush(new Like(post, likeId, user));
+    }
+
+    private void deleteLike(Long likeId) {
+        likeRepository.deleteById(likeId);
     }
 
 }

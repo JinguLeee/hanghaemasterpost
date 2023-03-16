@@ -6,22 +6,26 @@ import lombok.NoArgsConstructor;
 import javax.persistence.*;
 
 @Getter
-@Entity
 @NoArgsConstructor
-public class LikeReply {
+@Entity(name = "likelist")
+public class Like {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column
-    private Long replyId;
+    @Column(nullable = false)
+    private int index;
+
+    @Column(nullable = false)
+    private Long likeId;
 
     @ManyToOne
     @JoinColumn(name = "userId", nullable = false)
     private User user;
 
-    public LikeReply(Long replyId, User user) {
-        this.replyId = replyId;
+    public Like(LikeEnum likeEnum, Long likeId, User user) {
+        this.index = likeEnum.getIndex();
+        this.likeId = likeId;
         this.user = user;
     }
 }

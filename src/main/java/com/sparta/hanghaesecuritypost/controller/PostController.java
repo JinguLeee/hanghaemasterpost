@@ -26,8 +26,8 @@ public class PostController {
 
     @ApiOperation(value = "게시글 조회", notes = "전체 게시글을 조회한다.")
     @GetMapping()
-    public List<PostResponseDto> getPosts() {
-        return postService.getPost();
+    public List<PostResponseDto> getPostList() {
+        return postService.getPostList();
     }
 
     @ApiOperation(value = "게시글 조회", notes = "하나의 게시글을 조회한다.")
