@@ -1,3 +1,35 @@
+# Custom 예외처리
+### 봐야 할 부분
+
+**RestApiExceptionHandler**
+
+- 글로벌 예외 처리에서 커스텀 한 예외 처리를 어떻게 하는지 (TODO 검색)
+    - IllegalArgumentException으로 통째로 처리하면 HttpStatus를 한 상태만 보내주게 됨
+    - 이것을 Enum으로 상태, 메세지를 정의하고 가져오고 싶어서 Exception을 커스텀 하게 됨
+<br>
+
+**PostService**
+
+- 커스텀 예외 처리 예시 (TODO 검색)
+<br>
+
+**CustomErrorEnum**
+
+- 예외 처리의 Enum을 정의 (HttpStatus와 메세지를 사용하였음)
+<br>
+
+**CustomException**
+
+- CustomErrorEnum으로 예외 처리를 하도록 Exception class를 커스텀 함
+<br>
+
+**CustomExceptionDto**
+
+- 예외 처리의 정보를 보내줄 Dto (errorCode, httpStatus, 메세지를 사용하였음)
+<br>
+
+---
+
 # hanghaemasterpost
 게시글 만들기 LV.5
 
